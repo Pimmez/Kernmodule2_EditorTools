@@ -46,7 +46,7 @@ public class OctahedronSphereCreator : MonoBehaviour
 
     private static void CreateOctahedron(Vector3[] vertices, int[] triangles, int resolution)
     {
-        int v = 0;
+        int v = 0, vBottom = 0, t = 0;
 
         for (int i = 0; i < 4; i++)
         {
@@ -57,11 +57,42 @@ public class OctahedronSphereCreator : MonoBehaviour
         {
             float progress = (float)i / resolution;
             Vector3 from, to;
-            vertices[v++] = from = Vector3.Lerp(Vector3.down, Vector3.forward, progress);
-            to = Vector3.Lerp(Vector3.down, Vector3.left, progress);
-            v = CreateVertexLine(from, to, i, v, vertices);
+            vertices[v++] = to = Vector3.Lerp(Vector3.down, Vector3.forward, progress);
+            for (int d = 0; d < 4; d++)
+            {
+                from = to;
+                to = Vector3.Lerp(Vector3.down, directions[d], progress);
+                t = CreateLowerStrip(i, v, vBottom, t, triangles);
+                v = CreateVertexLine(from, to, i, v, vertices);
+                vBottom += i > 1 ? (i - 1) : 1;
+            }
+            vBottom = v - 1 - i * 4;
         }
     }
+    private static int CreateLowerStrip(int steps, int vTop, int vBottom, int t, int[] triangles)
+    {
+        for (int i = 1; i < steps; i++)
+        {
+            triangles[t++] = vBottom;
+            triangles[t++] = vTop - 1;
+            triangles[t++] = vTop;
+
+            triangles[t++] = vBottom++;
+            triangles[t++] = vTop++;
+            triangles[t++] = vBottom;
+        }
+        triangles[t++] = vBottom;
+        triangles[t++] = vTop - 1;
+        triangles[t++] = vTop;
+        return t;
+    }
+
+    private static Vector3[] directions = {
+        Vector3.left,
+        Vector3.back,
+        Vector3.right,
+        Vector3.forward
+    };
 
     private static int CreateVertexLine(Vector3 from, Vector3 to, int steps, int v, Vector3[] vertices)
     {
